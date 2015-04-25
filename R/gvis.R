@@ -503,19 +503,27 @@ gvisNewChart <- function(chartid,type,options){
   ret
   }
 
+
+
 gvisListener <- function(chartid, type, options=list(gvis=list(gvis.listener.jscode = NULL))){
-  event <- "select"
   jscode <- options$gvis$gvis.listener.jscode
   jsListener <- ""
   # not all types support Listener and select event
-  if(!is.null(jscode)){## this actually works in most & (tolower(type) %in% c("table", "geomap"))){
-    jsListener <- "
+  if(!is.null(jscode)){   ## this actually works in most & (tolower(type) %in% c("table", "geomap"))){
+
+    event <- if(length(names(jscode))) names(jscode) else "select"
+
+    isFunc = grepl("^[[:space:]]*function", jscode)
+
+    jsListener <- if(isFunc)
+               sprintf(" google.visualization.events.addListener(chart, '%s', %s);", event, jscode)
+            else
+                sprintf("
     google.visualization.events.addListener(chart, '%s',gvisListener%s);
     function gvisListener%s() {
     %s
     }
-    "
-    jsListener <- sprintf(jsListener,event,chartid,chartid,jscode)
+    ", event, chartid, chartid, jscode)
   }
   jsListener
 }
